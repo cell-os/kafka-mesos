@@ -910,6 +910,7 @@ object Cli {
       cmd match {
         case "list" => handleList(arg, args)
         case "add" | "update" => handleAddUpdate(arg, args, cmd == "add")
+        case "delete" => handleDelete(arg, args)
         case "rebalance" => handleRebalance(arg, args)
         case "partitions" => handlePartitions(arg)
         case _ => throw new Error("unsupported topic command " + cmd)
@@ -928,6 +929,8 @@ object Cli {
           handleList(null, null, help = true)
         case "add" | "update" =>
           handleAddUpdate(null, null, cmd == "add", help = true)
+        case "delete" =>
+          handleDelete(null, null, help = true)
         case "rebalance" =>
           handleRebalance(null, null, help = true)
         case "partitions" =>
@@ -976,6 +979,37 @@ object Cli {
           printTopic(topic, 1)
           printLine()
         }
+      }
+    }
+
+    def handleDelete(name: String, args: Array[String], help: Boolean = false): Unit = {
+      if (help) {
+        printLine(s"delete topic\nUsage: topic delete <topic-expr>\n")
+        printLine()
+        handleGenericOptions(null, help = true)
+        printLine()
+        Expr.printTopicExprExamples(out)
+        return
+      }
+
+      val params = new util.LinkedHashMap[String, String]
+      params.put("topic", name)
+
+      var json: Map[String, Object] = null
+      try { json = sendRequest(s"/topic/delete", params) }
+      catch { case e: IOException => throw new Error("Failed to delete " + name + ": " + e) }
+
+      printLine("response: '" + json+"'")
+      val topicNodes = json("topics").asInstanceOf[List[Map[String, Object]]]
+
+      val title = s"topic${if (topicNodes.size > 1) "s" else ""} deleted:"
+      printLine(title)
+
+      for (topicNode <- topicNodes) {
+        val topic = new Topic()
+        topic.fromJson(topicNode)
+        printTopic(topic, 1)
+        printLine()
       }
     }
 
@@ -1144,6 +1178,7 @@ object Cli {
       printLine("list       - list topics", 1)
       printLine("add        - add topic", 1)
       printLine("update     - update topic", 1)
+      printLine("delete     - delete topic", 1)
       printLine("rebalance  - rebalance topics", 1)
       printLine("partitions - list partition details for a topic", 1)
     }

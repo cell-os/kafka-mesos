@@ -521,6 +521,7 @@ object HttpServer {
 
       if (uri == "list") handleListTopics(request, response)
       else if (uri == "add" || uri == "update") handleAddUpdateTopic(request, response)
+      else if (uri == "delete") handleDeleteTopic(request, response)
       else if (uri == "rebalance") handleTopicRebalance(request, response)
       else response.sendError(404, "uri not found")
     }
@@ -538,6 +539,31 @@ object HttpServer {
           topicNodes.add(topic.toJson)
 
       response.getWriter.println("" + new JSONObject(Map("topics" -> new JSONArray(topicNodes.toList))))
+    }
+
+    def handleDeleteTopic(request: HttpServletRequest, response: HttpServletResponse): Unit = {
+      val topics: Topics = Scheduler.cluster.topics
+      val errors = new util.ArrayList[String]()
+
+      val topicExpr: String = request.getParameter("topic")
+      if (topicExpr == null || topicExpr.isEmpty) errors.add("topic required")
+      val topicNames: util.List[String] = Expr.expandTopics(topicExpr)
+
+      for (name <- topicNames) {
+        val topic = topics.getTopic(name)
+        if (topic == null) errors.add(s"Topic $name not found")
+      }
+
+      if (!errors.isEmpty) { response.sendError(400, errors.mkString("; ")); return }
+
+      val topicNodes= new ListBuffer[JSONObject]
+
+      for (name <- topicNames) {
+        topics.deleteTopic(topics.getTopic(name))
+        topicNodes.add(topics.getTopic(name).toJson)
+      }
+
+      response.getWriter.println(JSONObject(Map("topics" -> new JSONArray(topicNodes.toList))))
     }
 
     def handleAddUpdateTopic(request: HttpServletRequest, response: HttpServletResponse): Unit = {

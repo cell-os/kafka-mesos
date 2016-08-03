@@ -879,6 +879,26 @@ topic-expr examples:
   t*        - topics starting with 't'
 ```
 
+Deleting Topic
+--------------
+```
+#./kafka-mesos.sh help topic delete
+delete topic
+Usage: topic delete <topic-expr>
+
+
+Generic Options
+Option  Description
+------  -----------
+--api   Api url. Example: http://master:7000
+
+topic-expr examples:
+  t0        - topic t0
+  t0,t1     - topics t0, t1
+  *         - any topic
+  t*        - topics starting with 't'
+```
+
 Listing topic partition details
 -------------------------------
 ```
@@ -1001,6 +1021,12 @@ Updating topic
 ```
 # curl "http://localhost:7000/api/topic/update?topic=t&options=flush.ms%3D1000"
 {"topic" : {"name" : "t", "partitions" : {"0" : "0, 1"}, "options" : {"flush.ms" : "1000"}}}
+```
+
+Deleting topic
+```
+# curl "http://localhost:7000/api/topic/delete?topic=t"
+{"topic" : {"name" : "t", "partitions" : {"0" : "0, 1"}, "options" : {}}}
 ```
 
 Project Goals

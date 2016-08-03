@@ -135,6 +135,12 @@ class Topics {
     finally { zkClient.close() }
   }
 
+  def deleteTopic(topic: Topic): Unit = {
+    val zkClient = newZkClient
+    try { AdminUtils.deleteTopic(zkClient, topic.name) }
+    finally { zkClient.close() }
+  }
+
   def validateOptions(options: util.Map[String, String]): String = {
     val config: Properties = new Properties()
     for ((k, v) <- options) config.setProperty(k, v)
